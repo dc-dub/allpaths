@@ -25,18 +25,53 @@ type XMLWay struct {
 	Tags    []Tag    `xml:"tag"`
 }
 
-type OSM struct {
-	XMLName xml.Name `xml:"osm"`
-	Ways    []XMLWay `xml:"way"`
+type XMLNode struct {
+	XMLName   xml.Name `xml:"node"`
+	ID        string   `xml:"id,attr"`
+	Latitude  float64  `xml:"lat,attr"`
+	Longitude float64  `xml:"lon,attr"`
 }
 
-func ReadXML(reader io.Reader) ([]XMLWay, error) {
+type OSM struct {
+	XMLName xml.Name  `xml:"osm"`
+	Nodes   []XMLNode `xml:"node"`
+	Ways    []XMLWay  `xml:"way"`
+}
+
+func ReadXML(reader io.Reader) ([]XMLWay, []XMLNode, error) {
 	var osm OSM
 	if err := xml.NewDecoder(reader).Decode(&osm); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return osm.Ways, nil
+	return osm.Ways, osm.Nodes, nil
+}
+
+type NodeSlice []XMLNode
+
+func (slice NodeSlice) Len() int           { return len(slice) }
+func (slice NodeSlice) Less(i, j int) bool { return slice[i].ID > slice[j].ID }
+func (slice NodeSlice) Swap(i, j int)      { slice[i], slice[j] = slice[j], slice[i] }
+
+type IDCount struct {
+	ID    []string
+	count []int
+}
+
+func FindID(id string, idSlice IDCount) IDCount {
+	var idFound bool = false
+
+	for i := 0; i < len(idSlice.ID) && !idFound; i++ {
+		if idSlice.ID[i] == id {
+			idFound = true
+			idSlice.count[i]++
+		}
+	}
+
+	if !idFound {
+		idSlice = append(idSlice.ID, id)
+		idSlice = append(idSlice.count, 1)
+	}
 }
 
 func main() {
@@ -54,25 +89,25 @@ func main() {
 
 	defer file.Close()
 
-	xmlWay, err := ReadXML(file)
+	xmlWay, xmlNodes, err := ReadXML(file)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	fmt.Println(len(xmlWay))
-	num := 0
-	for i := 0; i < len(xmlWay); i++ {
-		for j := 0; j < len(xmlWay[i].Tags); j++ {
-			streetName := xmlWay[i].Tags[j].Vee
-			if xmlWay[i].Tags[j].Kay == "name" {
-				fmt.Printf("Street Name: %s\n", streetName)
-			}
-			if streetName == "Winterlake Drive" {
-				fmt.Println("We're HOME!")
+	// fmt.Printf("Number of ways: %d\n", len(xmlWay))
+	// fmt.Printf("Number of nodes: %d\n", len(xmlNodes))
 
-			}
-		}
-	}
-	fmt.Printf("\n\n Total number of marshes: %d", num)
+	// num := 0
+	// for i := 0; i < len(xmlWay); i++ {
+	// 	num += len(xmlWay[i].Refs)
+	// }
+	// fmt.Printf("Number of refs: %d", num)
+
+	// sort.Sort(NodeSlice(xmlNodes))
+	// fmt.Println("Sorted")
+	// for i, c := range xmlNodes {
+	// 	fmt.Println(i, c.ID)
+	// }
+
 }
