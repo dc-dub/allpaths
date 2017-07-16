@@ -56,9 +56,10 @@ func (slice NodeSlice) Swap(i, j int)      { slice[i], slice[j] = slice[j], slic
 type IDCount struct {
 	ID    []string
 	count []int
+	Roads []string
 }
 
-func FindID(id string, idSlice IDCount) IDCount {
+func FindID(id string, idSlice *IDCount) {
 	var idFound bool = false
 
 	for i := 0; i < len(idSlice.ID) && !idFound; i++ {
@@ -69,8 +70,8 @@ func FindID(id string, idSlice IDCount) IDCount {
 	}
 
 	if !idFound {
-		idSlice = append(idSlice.ID, id)
-		idSlice = append(idSlice.count, 1)
+		idSlice.ID = append(idSlice.ID, id)
+		idSlice.count = append(idSlice.count, 1)
 	}
 }
 
@@ -94,20 +95,20 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	var listOfIDs IDCount
+	for i := range xmlWay {
+		for j := range xmlWay[i].Refs {
+			FindID(xmlWay[i].Refs[j].Ref, &listOfIDs)
+		}
+	}
 
-	// fmt.Printf("Number of ways: %d\n", len(xmlWay))
-	// fmt.Printf("Number of nodes: %d\n", len(xmlNodes))
-
-	// num := 0
-	// for i := 0; i < len(xmlWay); i++ {
-	// 	num += len(xmlWay[i].Refs)
-	// }
-	// fmt.Printf("Number of refs: %d", num)
-
-	// sort.Sort(NodeSlice(xmlNodes))
-	// fmt.Println("Sorted")
-	// for i, c := range xmlNodes {
-	// 	fmt.Println(i, c.ID)
-	// }
-
+	count := 0
+	for i := range listOfIDs.ID {
+		if listOfIDs.count[i] > 1 {
+			count++
+			fmt.Printf("ID: %s Count: %d\n", listOfIDs.ID[i], listOfIDs.count[i])
+		}
+	}
+	fmt.Printf("Number of intersections: %d\n", count)
+	fmt.Printf("Number of nodes: %d\n", len(xmlNodes))
 }
